@@ -94,7 +94,9 @@ class UI:
 
     def on_node_right_click(self, event):
         node_number = self.find_node_number_at(event.x, event.y)
-        self.write_to_terminal(f"Node N{node_number} right clicked")
+        self.graph.add_agent(node_number)
+        self.draw_graph()
+        self.write_to_terminal(f"Agent placed on node N{node_number}")
 
     def on_node_left_click(self, event):
         node_number = self.find_node_number_at(event.x, event.y)
@@ -131,8 +133,31 @@ class UI:
         self.graph.load_graph(filename)
         self.graph_pane.delete("all")  # Clear existing graph
 
+        self.draw_graph()
+
+    def draw_graph(self):
+        self.graph_pane.delete("all")
+
         for node_number, node in self.graph.nodes.items():
-            self.draw_node(node.x, node.y, "lime", node_number=node_number)
+            agent_number = self.node_agent_number(node_number)
+            if agent_number > 0:
+                self.draw_node(node.x, node.y, "red", node_number=node_number)
+                agent_id = self.graph_pane.create_text(
+                    node.x+20, node.y+10,  # Center at exact click position
+                    text=agent_number,
+                    fill="red",
+                    font=("Arial", 8, "bold"),
+                    tags=("node", f"node_text_{node_number}")
+                )
+            else:
+                self.draw_node(node.x, node.y, "lime", node_number=node_number)
 
         for edge in self.graph.edges:
             self.draw_edge(edge[0], edge[1])
+
+    def node_agent_number(self, node_number):
+        agent_number = 0
+        for agent in self.graph.agents:
+            if int(agent.node_position) == int(node_number):
+                agent_number += 1
+        return agent_number
