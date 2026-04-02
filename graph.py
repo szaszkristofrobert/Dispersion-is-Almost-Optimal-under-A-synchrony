@@ -19,12 +19,11 @@ class Graph:
 
     def add_edge(self, node1_number, node2_number):
         if node1_number in self.nodes.keys() and node2_number in self.nodes.keys():
-            self.edges.append([node1_number, node2_number]) 
+            self.edges.append([node1_number, node2_number])
             self.nodes[node1_number].neighbors.add(node2_number)
             self.nodes[node2_number].neighbors.add(node1_number)
             self.nodes[node1_number].edges[len(self.nodes[node1_number].edges)] = node2_number
             self.nodes[node2_number].edges[len(self.nodes[node2_number].edges)] = node1_number
-
 
     def print_graph(self):
         print("Nodes:")
@@ -42,6 +41,7 @@ class Graph:
     def clear_graph(self):
         self.nodes = {}
         self.edges = []
+        self.agents = []
 
     def save_graph(self, filename):
         graph_data = {
@@ -49,17 +49,24 @@ class Graph:
             'edges': self.edges,
             'agents': [{'id': agent.id, 'node_position': agent.node_position} for agent in self.agents]
         }
-        with open(f"graphs/{filename}.json", 'x') as f:
+        with open(f"graphs/{filename}.json", 'w') as f:
             json.dump(graph_data, f, indent=2)
         print(f"Saving graph to {filename}.json")
 
     def load_graph(self, filename):
+
+        self.clear_graph()
+
         with open(f"graphs/{filename}.json", 'r') as f:
             graph_data = json.load(f)
+
         self.nodes = {int(num): Node(int(num), data['x'], data['y']) for num, data in graph_data['nodes'].items()}
         for edge in graph_data['edges']:
-            self.add_edge(edge[0], edge[1])
-        self.agents = [Agent(agent['id'], agent['node_position']) for agent in graph_data['agents']]
+            self.add_edge(int(edge[0]), int(edge[1]))
+
+        if 'agents' in graph_data:
+            self.agents = [Agent(agent['id'], int(agent['node_position'])) for agent in graph_data['agents']]
+
         print(f"Loaded graph from {filename}.json")
 
     def max_degree(self):
@@ -82,7 +89,7 @@ class Graph:
         agent.move_to_node(new_node_position, new_pin, new_pout)
 
     def step_graph(self):
-        # Move each agent to the neighnor with port number 1
+        # Move each agent to the neighbor with port number 1
         for agent in self.agents:
             current_node = self.nodes[int(agent.node_position)]
             if current_node.neighbors:
