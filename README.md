@@ -15,7 +15,9 @@ A gráf ablakban:
 
 ### Log ablak
 Jobb oldalt fent egy egyszerűsített log látható, ami nyomon követi a gráf létrehozását, és visszajelzést ad a kattintásokról a gráf ablakban.
+
 ![log ablak képernyőkép](images/log_screenshot.png)
+
 Például, ha meghiúsul az él létrehozása, mert a második kattintás nem egy csúcson történt, azt a program itt jelzi.
 
 ### Vezérlőgombok
