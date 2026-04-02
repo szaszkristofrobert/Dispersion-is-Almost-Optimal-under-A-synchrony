@@ -4,8 +4,10 @@
 A projekt a [Dispersion-is-Almost-Optimal-under-A-synchrony](https://dl.acm.org/doi/pdf/10.1145/3694906.3743317) tanulmányhoz tartozó demonstrátor program.
 
 ## Használat
-A program terminálból a ```python main.py``` paranccsal futtatható.![képernyőkép az alkalmazásról](images/screenshot.png) A megjelenő ablakon bal oldalt látható az algoritmushoz tartozó gráf. 
+A program terminálból a ```python main.py``` paranccsal futtatható.
+![képernyőkép az alkalmazásról](images/screenshot.png) 
 ### Gráf ablak
+A megjelenő ablakon bal oldalt látható az algoritmushoz tartozó gráf. 
 A gráf ablakban:
 - Bal klikkel létrehozható új csúcspont
 - Bal klikkel összeköthető két meglévő csúcspont egy éllel
