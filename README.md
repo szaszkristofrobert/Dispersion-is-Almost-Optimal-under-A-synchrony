@@ -24,7 +24,9 @@ Például, ha meghiúsul az él létrehozása, mert a második kattintás nem eg
 ![vezérlőgombok képernyőkép](images/controls.png)
 #### Print Graph
 A fejlesztőkörnyezet termináljába írja ki a gráfunkat.
+
 ![print képernyőkép](images/print.png)
+
 #### Clear Graph
 Kitörli a jelenlegi gráfot.
 #### Save/Load Graph
