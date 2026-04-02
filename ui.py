@@ -36,6 +36,7 @@ class UI:
         self.filename_entry.grid(row=4, column=0, sticky="n", pady=(0, 10))
         tk.Button(control_pane, text="Save Graph", command=lambda: self.graph.save_graph(self.filename_entry.get())).grid(row=5, column=0, sticky="n", pady=(0, 10))
         tk.Button(control_pane, text="Load Graph", command=lambda: self.load_graph(self.filename_entry.get())).grid(row=6, column=0, sticky="n", pady=(0, 10))
+        tk.Button(control_pane, text="Step Graph", command=lambda: self.step_graph()).grid(row=7, column=0, sticky="n", pady=(0, 10))
 
         # Terminal takes remaining space
         self.terminal = scrolledtext.ScrolledText(
@@ -161,3 +162,7 @@ class UI:
             if int(agent.node_position) == int(node_number):
                 agent_number += 1
         return agent_number
+    
+    def step_graph(self):
+        self.graph.step_graph()
+        self.draw_graph()

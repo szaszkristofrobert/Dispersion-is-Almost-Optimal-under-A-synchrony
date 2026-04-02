@@ -1,6 +1,7 @@
 from node import Node
 from agent import Agent
 import json
+import random
 
 class Graph:
     def __init__(self):
@@ -65,4 +66,24 @@ class Graph:
         if not self.nodes:
             return 0
         return max(node.degree() for node in self.nodes.values())
-    
+
+    def move_agent(self, agent, port_number):
+        current_node = self.nodes[int(agent.node_position)]
+        new_pout = port_number
+        new_node_position = current_node.edges[new_pout]
+
+        new_node = self.nodes[int(new_node_position)]
+        new_pin = 0
+        for pin in new_node.edges:
+            if int(new_node.edges[pin]) == int(agent.node_position):
+                new_pin = pin
+                break
+
+        agent.move_to_node(new_node_position, new_pin, new_pout)
+
+    def step_graph(self):
+        # Move each agent to the neighnor with port number 1
+        for agent in self.agents:
+            current_node = self.nodes[int(agent.node_position)]
+            if current_node.neighbors:
+                self.move_agent(agent, 1)
