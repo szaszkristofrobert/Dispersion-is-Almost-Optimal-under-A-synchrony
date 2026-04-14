@@ -12,10 +12,6 @@ class Graph:
         self.phase = "INIT"
         self.target_port = None
 
-        # Változók a UI naplózáshoz
-        self.step_counter = 0
-        self.action_logs = []
-
     def add_agent(self, node_position):
         agent = Agent(len(self.agents), node_position)
         self.agents.append(agent)
@@ -35,7 +31,6 @@ class Graph:
             self.nodes[node2_number].edges[p2] = node1_number
 
     def move_agent(self, agent, port_number):
-        old_node_position = agent.node_position
         current_node = self.nodes[int(agent.node_position)]
         new_node_position = current_node.edges[port_number]
         new_node = self.nodes[int(new_node_position)]
@@ -48,27 +43,25 @@ class Graph:
 
         agent.move_to_node(new_node_position, new_pin, port_number)
 
-        # Automatikus naplózás a UI-nak
-        log_msg = f"[Lépés: {self.step_counter}] Ágens {agent.id} átlépett a(z) N{new_node_position} csomópontra a(z) {port_number}-es porton. (Indult: N{old_node_position})"
-        self.action_logs.append(log_msg)
-
     def get_unsettled_neighbor_port(self, node_id, my_tree_label):
         node = self.nodes[node_id]
         sorted_ports = sorted([p for p in node.edges.keys() if p > 0])
         for port in sorted_ports:
             neighbor_id = node.edges[port]
+
+            # Megnézzük, hogy járt-e már itt valamelyik DFS csapat (Oszcilláció szimulálása)
             enemy_tree_label = getattr(self.nodes[neighbor_id], 'visited_by', None)
 
             if enemy_tree_label is None:
-                return port, "EMPTY"
+                return port, "EMPTY"  # Teljesen érintetlen
             elif enemy_tree_label != my_tree_label:
-                return port, "COLLISION"
+                return port, "COLLISION"  # Másik csapat vette birtokba
+            # Ha a mi csapatunk járt itt (enemy_tree_label == my_tree_label),
+            # akkor szándékosan hagytuk üresen, így "FULL"-nak tekintjük!
         return None, "FULL"
 
     def step_graph(self):
         if not self.agents: return "NO_AGENTS"
-
-        self.step_counter += 1
 
         if self.phase == "INIT":
             nodes_with_agents = set(a.node_position for a in self.agents)
@@ -80,6 +73,7 @@ class Graph:
                 leader.is_leader = True
                 tree_label = leader.id
 
+                # JELÖLJÜK A KEZDŐPONTOT, hogy a DFS fa része!
                 self.nodes[node_id].visited_by = tree_label
 
                 k = len(team)
@@ -93,24 +87,16 @@ class Graph:
                 explorers = [a for a in team if not a.is_leader and not a.is_seeker]
                 if explorers:
                     min(explorers, key=lambda x: x.id).settled = True
-                    self.action_logs.append(
-                        f"[Lépés: {self.step_counter}] Rendszer: Inicializálás - Ágens {min(explorers, key=lambda x: x.id).id} letelepedett az N{node_id} bázison.")
                 elif len(team) > 1:
                     seekers = [a for a in team if a.is_seeker]
                     if seekers:
                         settler = min(seekers, key=lambda x: x.id)
                         settler.settled = True
                         settler.is_seeker = False
-                        self.action_logs.append(
-                            f"[Lépés: {self.step_counter}] Rendszer: Inicializálás - Kereső Ágens {settler.id} feláldozta magát az N{node_id} bázison.")
                 else:
                     leader.settled = True
-                    self.action_logs.append(
-                        f"[Lépés: {self.step_counter}] Rendszer: Inicializálás - Vezér Ágens {leader.id} egyedül letelepedett az N{node_id} bázison.")
 
             self.phase = "PROBE_OUT"
-            self.action_logs.append(
-                f"[Lépés: {self.step_counter}] Rendszer: Inicializálás befejeződött. Csapatok felálltak.")
             return "INIT_DONE"
 
         active_leaders = [a for a in self.agents if a.is_leader and not a.settled]
@@ -121,7 +107,7 @@ class Graph:
             for leader in active_leaders:
                 curr_node = self.nodes[leader.node_position]
                 seekers = [a for a in self.agents if
-                           a.is_seeker and not a.settled and a.tree_label == leader.tree_label and a.node_position == leader.node_position]
+                           a.is_seeker and not a.settled and a.tree_label == leader.tree_label]
                 ports_to_check = sorted([p for p in curr_node.edges.keys() if p > 0])
                 for i, seeker in enumerate(seekers):
                     if i < len(ports_to_check):
@@ -134,6 +120,7 @@ class Graph:
             for seeker in [a for a in self.agents if a.is_seeker and not a.settled]:
                 if seeker.parent_port is not None:
                     self.move_agent(seeker, seeker.parent_port)
+                    # JAVÍTÁS 1: Memória törlése, hogy ne menjenek rossz felé legközelebb!
                     seeker.parent_port = None
             self.phase = "MOVE"
             return "PROBING_IN"
@@ -145,6 +132,7 @@ class Graph:
                 my_team = [a for a in self.agents if a.tree_label == leader.tree_label]
                 target_port, status = self.get_unsettled_neighbor_port(leader.node_position, leader.tree_label)
 
+                # 1. ÜTKÖZÉS ÉS BEKEBELEZÉS
                 if status == "COLLISION":
                     target_node_id = self.nodes[leader.node_position].edges[target_port]
                     enemy_tree_label = getattr(self.nodes[target_node_id], 'visited_by', None)
@@ -155,11 +143,10 @@ class Graph:
                         for a in enemy_team:
                             a.tree_label = leader.tree_label
                             a.is_leader = False
+                        # Átírjuk a legyőzött fa által elfoglalt pontokat a mi címkénkre
                         for n in self.nodes.values():
                             if getattr(n, 'visited_by', None) == enemy_tree_label:
                                 n.visited_by = leader.tree_label
-                        self.action_logs.append(
-                            f"[Lépés: {self.step_counter}] Rendszer: A(z) {leader.id} fa bekebelezte a(z) {enemy_tree_label} fát!")
                     else:
                         for a in my_team:
                             a.tree_label = enemy_tree_label
@@ -167,15 +154,15 @@ class Graph:
                         for n in self.nodes.values():
                             if getattr(n, 'visited_by', None) == leader.tree_label:
                                 n.visited_by = enemy_tree_label
-                        self.action_logs.append(
-                            f"[Lépés: {self.step_counter}] Rendszer: A(z) {enemy_tree_label} fa bekebelezte a(z) {leader.id} fát!")
                         continue
 
+                        # 2. ELŐRELÉPÉS
                 elif status == "EMPTY":
                     target_node_id = self.nodes[leader.node_position].edges[target_port]
+                    # JAVÍTÁS 2: Lefoglaljuk a pontot, hogy ne jöjjünk vissza ide pingpongozni!
                     self.nodes[target_node_id].visited_by = leader.tree_label
 
-                    moving_group = [a for a in my_team if not a.settled and a.node_position == leader.node_position]
+                    moving_group = [a for a in my_team if not a.settled]
                     for a in moving_group:
                         self.move_agent(a, target_port)
 
@@ -185,13 +172,12 @@ class Graph:
                     if current_explorers:
                         settler = min(current_explorers, key=lambda x: x.id)
                         settler.settled = True
-                        self.action_logs.append(
-                            f"[Lépés: {self.step_counter}] Rendszer: Felfedező Ágens {settler.id} letelepedett az N{settler.node_position} csomóponton.")
 
+                # 3. VISSZALÉPÉS
                 else:
                     current_node_settlers = [a for a in my_team if
                                              a.node_position == leader.node_position and a.settled]
-                    moving_group = [a for a in my_team if not a.settled and a.node_position == leader.node_position]
+                    moving_group = [a for a in my_team if not a.settled]
 
                     if not current_node_settlers:
                         current_seekers = [a for a in moving_group if a.is_seeker]
@@ -200,13 +186,9 @@ class Graph:
                             settler.settled = True
                             settler.is_seeker = False
                             moving_group.remove(settler)
-                            self.action_logs.append(
-                                f"[Lépés: {self.step_counter}] Rendszer: Visszatöltés. Kereső Ágens {settler.id} letelepedett az N{settler.node_position} csomóponton.")
                         elif leader in moving_group:
                             leader.settled = True
                             moving_group.remove(leader)
-                            self.action_logs.append(
-                                f"[Lépés: {self.step_counter}] Rendszer: Visszatöltés. Vezér Ágens {leader.id} letelepedett az N{leader.node_position} csomóponton.")
 
                     if leader.path_stack and moving_group:
                         back_port = leader.path_stack.pop()
@@ -234,8 +216,6 @@ class Graph:
         self.agents = []
         self.phase = "INIT"
         self.target_port = None
-        self.step_counter = 0
-        self.action_logs = []
 
     def save_graph(self, filename):
         graph_data = {
@@ -245,6 +225,7 @@ class Graph:
         }
         if not os.path.exists("graphs"): os.makedirs("graphs")
         with open(f"graphs/{filename}.json", 'w') as f: json.dump(graph_data, f, indent=2)
+        print(f"Saving graph to {filename}.json")
 
     def load_graph(self, filename):
         self.clear_graph()

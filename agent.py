@@ -11,7 +11,7 @@ class Agent:
         self.parent_port = None
         self.tree_label = None
 
-        # A Leader memóriája a visszalépéshez (verem)
+        # ÚJ: A Leader memóriája a visszalépéshez (verem)
         self.path_stack = []
 
     def move_to_node(self, new_node_position, new_pin, new_pout):
