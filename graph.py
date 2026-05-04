@@ -65,6 +65,7 @@ class Graph:
 
         if self.phase == "INIT":
             nodes_with_agents = set(a.node_position for a in self.agents)
+            if len(nodes_with_agents) > 1: return "NOT ROOTED"
             for node_id in nodes_with_agents:
                 team = [a for a in self.agents if a.node_position == node_id]
                 team.sort(key=lambda x: x.id, reverse=True)

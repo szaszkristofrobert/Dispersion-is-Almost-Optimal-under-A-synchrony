@@ -81,8 +81,13 @@ class UI:
     def step_graph(self):
         res = self.graph.step_graph()
         self.draw_graph()
+        self.graph.print_graph()
         if res == "DISPERSION_FINISHED":
             self.write_to_terminal("Disperzió befejeződött: minden ágens letelepedett vagy a gráf bejárva.")
+        elif res == "NO_AGENTS":
+            self.write_to_terminal("Nincsenek agensek")
+        elif res == "NOT ROOTED":
+            self.write_to_terminal("Nem rooted a konfiguracio")
         else:
             self.write_to_terminal("DFS lépés végrehajtva.")
 
